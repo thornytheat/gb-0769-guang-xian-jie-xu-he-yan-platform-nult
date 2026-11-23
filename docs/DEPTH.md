@@ -14,6 +14,7 @@
 | M5 设计与实测对账 | 核对逐接头是否缺证 | POST /api/design | `app/modules/design/service.py` | `tests/test_design.py` |
 | M6 批次留档复跑 | 留档和重跑同一轨迹组 | POST /api/inspections | `app/modules/archive/storage.py` | `tests/test_archive.py` |
 | M7 光纤证据签发 | 复核签发条件并下载 | GET /api/certificate/<id> | `app/modules/certificate/service.py` | `tests/test_certificate.py` |
+| M8 月度进度结算 | 按约定单价核对应付、补扣追溯 | POST /api/settlements | `app/modules/settlement/ledger.py` | `tests/test_settlement.py` |
 
 ## 陷阱登记
 
@@ -34,5 +35,13 @@
 - 6 个设计接头 = 3 通过 + 1 超限 + 2 缺证。
 - 12 条窗内端点 = 2×(4 已挂接 + 1 孤配) + 2 单端。窗外测量另计 1 条。
 - F-01 双向均值 (−0.100+0.300)/2=0.1000 dB，F-03 为 (0.33+0.31)/2=0.3200 dB，超出 0.200 dB。
+
+## 结算规则
+
+- 线路按校准参数归并；每期每条线路采信留档最新的一份核验作为签发件。
+- 未留档的测量不入账；仅判定 PASS 的接头按约定单价计款，超限、缺证不计。
+- 已结月份只读：重试返回原快照，不重复计款；晚到留档不改写已结月份。
+- 后续补测改判在本期补付或扣回，扣回按原付款金额，分录追溯原签发件与付款期。
+- 结算期单调递增，已结月份之前的月份不允许补结；金额以分存储。
 
 输入为设备导出的事件表。二进制曲线解码、坡度自校与电子签章未纳入该工作台。

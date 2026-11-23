@@ -1,0 +1,33 @@
+<section class="panel archive">
+  <h3>$ 月度进度结算</h3>
+  <form class="command" method="post" data-busy="正在结算…">
+    <span class="prompt" aria-hidden="true">$</span>
+    <label for="settle-period">结算期</label>
+    <input type="month" name="period" id="settle-period" value="{{ statement.period if statement else '' }}" required>
+    <label for="settle-price">约定单价 (元/接头)</label>
+    <input name="unit_price" id="settle-price" inputmode="decimal" placeholder="180.00" required>
+    <button id="settle-run">结算 / 重试</button><output id="request-state" aria-live="polite"></output>
+  </form>
+  {% if settled_now %}<p role="status">{{ '本期新结' if fresh else '复用已结快照，未重复计款' }} {{ statement.period }} · 单价 {{ statement.unit_price_fen|yuan }} 元/接头</p>{% endif %}
+  {% if statement %}
+  <dl class="kpis">
+    <div><dt>线路</dt><dd>{{ statement.totals.lines }}</dd></div>
+    <div><dt>计款接头</dt><dd>{{ statement.totals.paid_joints }}</dd></div>
+    <div><dt>本期应付 (元)</dt><dd>{{ statement.totals.payable_fen|yuan }}</dd></div>
+    <div><dt>本期扣回 (元)</dt><dd>{{ statement.totals.deducted_fen|yuan }}</dd></div>
+    <div><dt>本期净额 (元)</dt><dd>{{ statement.totals.net_fen|yuan }}</dd></div>
+  </dl>
+  {% for line in statement.lines %}
+  <h4>线路 {{ line.line[:12] }} · 采信签发件 <a href="/inspect/certificate?inspection={{ line.inspection_id }}">{{ line.inspection_id[:15] }}</a> · 留档 {{ line.generated_at }}</h4>
+  <div class="sheet"><table><thead><tr><th>接头</th><th>净损耗 (dB)</th><th>核验</th><th>状态</th><th>金额 (元)</th></tr></thead><tbody>
+    {% for row in line.joints %}<tr><td>{{ row.joint }}</td><td class="num">{{ row.net_db or '—' }}</td><td class="result" {% if row.code %}data-state="{{ row.code }}"{% endif %}>{{ codes[row.code] if row.code else '—' }}</td><td>{{ states[row.state] }}</td><td class="num">{{ row.amount_fen|yuan if row.amount_fen else '—' }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% if line.entries %}<div class="sheet"><table><thead><tr><th>接头</th><th>类型</th><th>金额 (元)</th><th>追溯原签发件与付款</th></tr></thead><tbody>
+    {% for entry in line.entries %}<tr><td>{{ entry.joint }}</td><td>{{ kinds[entry.kind] }}</td><td class="num">{{ entry.amount_fen|yuan }}</td><td>{% if entry.origin %}{{ entry.origin.period }} · <a href="/inspect/certificate?inspection={{ entry.origin.inspection_id }}">{{ entry.origin.inspection_id[:12] }}</a> · 已付 {{ entry.origin.amount_fen|yuan }} 元{% else %}—{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>{% endif %}
+  {% else %}<p>本期没有留档核验记录，零结算。未留档的测量不入账。</p>{% endfor %}
+  {% endif %}
+  <div class="sheet"><table><thead><tr><th>结算期</th><th>单价 (元)</th><th>应付 (元)</th><th>扣回 (元)</th><th>净额 (元)</th><th>结算时间 UTC</th></tr></thead><tbody>
+    {% for item in settlements %}<tr><td><a href="/inspect/settlement?period={{ item.period }}">{{ item.period }}</a></td><td class="num">{{ item.unit_price_fen|yuan }}</td><td class="num">{{ item.payable_fen|yuan }}</td><td class="num">{{ item.deducted_fen|yuan }}</td><td class="num">{{ item.net_fen|yuan }}</td><td>{{ item.settled_at }}</td></tr>{% else %}<tr><td colspan="6">还没有结算记录。留档核验后按月结算，已结月份不可改。</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>

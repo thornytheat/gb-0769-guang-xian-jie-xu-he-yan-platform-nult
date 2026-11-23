@@ -7,3 +7,7 @@ A、B 的 CSV 必填 `event,distance,unit,loss_db`，设计清单必填 `joint,d
 双端事件按链程和 ID 排序。一对一单调配对先最大化数量，再最小化距离差总和，最后依照同状态优先配对、保留较早 A 端、再保留较早 B 端的固定遍历作稳定裁决。容差 `pair_tol_m` 含等号。配对中点的分辨率为半毫米。配对双方的读数取带符号平均作为净损耗，保留单向负值和原行。通过阈值含等号，净值为负记录无效净增益。
 
 设计点与配对中点再次按相同优化目标一对一对齐，使用 `design_tol_m`。每接头以自己的 `limit_db` 判定，损耗模块的 `reference_limit_db` 用于单独预览。单端或孤配均保留。运行清单含源 SHA-256、校准参数、时间 UTC、耗时、版本、证据。快照摘要可用排序键、紧凑 JSON 和 UTF-8 重算。
+
+## 结算字段
+
+结算请求必填 `period`（`YYYY-MM`）与 `unit_price`（元，最多两位小数，存为整数分 `unit_price_fen`）。结算单含 `settled_at` UTC、`lines` 与 `totals`。每条线路记录采信的 `inspection_id`、留档时间、逐接头 `joints` 与分录 `entries`。接头状态：`PAYABLE` 本期应付、`SUPPLEMENT` 本期补付、`DEDUCT` 本期扣回、`KEPT` 已付保持、`UNPAID` 未计款。分录 `origin` 追溯原付款的结算期、签发件与金额；补付无历史付款时 `origin` 为空。金额带符号，扣回为负。错误码：`BAD_SETTLEMENT_PERIOD`、`BAD_UNIT_PRICE`、`SETTLEMENT_PERIOD_CLOSED` (409)、`SETTLEMENT_NOT_FOUND` (404)。

@@ -2,14 +2,16 @@ const command = document.querySelector('.command');
 if (command) {
   const selector = command.querySelector('select');
   const details = command.querySelector('details');
-  selector.addEventListener('change', () => {
-    if (selector.value === 'custom') {
-      details.open = true;
-      details.querySelector('input').focus();
-    }
-  });
+  if (selector && details) {
+    selector.addEventListener('change', () => {
+      if (selector.value === 'custom') {
+        details.open = true;
+        details.querySelector('input').focus();
+      }
+    });
+  }
   command.addEventListener('submit', () => {
-    command.querySelector('output').textContent = '正在核验…';
+    command.querySelector('output').textContent = command.dataset.busy || '正在核验…';
   });
 }
 const grid = document.querySelector('#evidence-grid');
